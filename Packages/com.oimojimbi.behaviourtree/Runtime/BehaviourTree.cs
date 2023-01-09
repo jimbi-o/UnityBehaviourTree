@@ -19,20 +19,20 @@ namespace BehaviourTree
         public bool b;
     }
 
-    public class BlackBoard<Key>
+    public class BlackBoard
     {
-        private Dictionary<Key, ValueUnion> valueMap = new Dictionary<Key, ValueUnion>();
-        private Dictionary<Key, Vector3>    vector3Map = new Dictionary<Key, Vector3>();
-        private Dictionary<Key, GameObject> gameObjectMap = new Dictionary<Key, GameObject>();
+        private Dictionary<int, ValueUnion> valueMap = new Dictionary<int, ValueUnion>();
+        private Dictionary<int, Vector3>    vector3Map = new Dictionary<int, Vector3>();
+        private Dictionary<int, GameObject> gameObjectMap = new Dictionary<int, GameObject>();
 
-        public void SetFloat(Key key, in float value)
+        public void SetFloat(int key, in float value)
         {
             var data = new ValueUnion();
             data.f = value;
             valueMap[key] = data;
         }
 
-        public float GetFloat(in Key key)
+        public float GetFloat(in int key)
         {
             if (!valueMap.ContainsKey(key))
             {
@@ -41,14 +41,14 @@ namespace BehaviourTree
             return valueMap[key].f;
         }
 
-        public void SetBool(Key key, in bool value)
+        public void SetBool(int key, in bool value)
         {
             var data = new ValueUnion();
             data.b = value;
             valueMap[key] = data;
         }
 
-        public bool GetBool(in Key key)
+        public bool GetBool(in int key)
         {
             if (!valueMap.ContainsKey(key))
             {
@@ -57,14 +57,14 @@ namespace BehaviourTree
             return valueMap[key].b;
         }
 
-        public void SetInt(Key key, in int value)
+        public void SetInt(int key, in int value)
         {
             var data = new ValueUnion();
             data.i = value;
             valueMap[key] = data;
         }
 
-        public int GetInt(in Key key)
+        public int GetInt(in int key)
         {
             if (!valueMap.ContainsKey(key))
             {
@@ -73,12 +73,12 @@ namespace BehaviourTree
             return valueMap[key].i;
         }
 
-        public void SetVector3(Key key, in Vector3 value)
+        public void SetVector3(int key, in Vector3 value)
         {
             vector3Map[key] = value;
         }
 
-        public Vector3 GetVector3(in Key key)
+        public Vector3 GetVector3(in int key)
         {
             if (!vector3Map.ContainsKey(key))
             {
@@ -87,12 +87,12 @@ namespace BehaviourTree
             return vector3Map[key];
         }
 
-        public void SetGameObject(Key key, in GameObject value)
+        public void SetGameObject(int key, in GameObject value)
         {
             gameObjectMap[key] = value;
         }
 
-        public GameObject GetGameObject(in Key key)
+        public GameObject GetGameObject(in int key)
         {
             if (!gameObjectMap.ContainsKey(key))
             {
@@ -102,7 +102,15 @@ namespace BehaviourTree
         }
     }
 
-    public class BTNode
+    public enum BTResult
     {
+        Success,
+        Failure,
+        Running,
+    }
+
+    public abstract class BTNode
+    {
+        public abstract BTResult Execute(BlackBoard blackboard);
     }
 }
