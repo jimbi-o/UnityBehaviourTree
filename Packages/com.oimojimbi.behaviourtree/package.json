@@ -1,0 +1,27 @@
+{
+  "name": "com.oimojimbi.behaviourtree",
+  "version": "1.0.0",
+  "displayName": "Scriptable Behaviour Tree",
+  "description": "A script-base behaviour tree.",
+  "unity": "2022.1",
+  "unityRelease": "14f1",
+  "documentationUrl": "https://github.com/jimbi-o/UnityBehaviourTree",
+  "changelogUrl": "https://github.com/jimbi-o/UnityBehaviourTree",
+  "licensesUrl": "https://github.com/jimbi-o/UnityBehaviourTree/LICENSE",
+  "keywords": [
+    "Behaviour Tree",
+    "Behavior Tree",
+    "AI"
+  ],
+  "author": {
+    "name": "oimo&jimbi",
+    "url": "https://github.com/jimbi-o/UnityBehaviourTree"
+  },
+  "samples": [
+    {
+      "displayName": "sample scene",
+      "description": "sample scene testing behaviour tree",
+      "path": "Samples~/BehaviourTree"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+    "name": "com.oimojimbi.behaviourtree.Runtime.Tests",
+    "references": [
+        "com.oimojimbi.behaviourtree.Runtime"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
