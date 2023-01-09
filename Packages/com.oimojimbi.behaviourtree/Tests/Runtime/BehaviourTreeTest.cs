@@ -3,24 +3,31 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using BehaviourTree;
+using BlackBoard = BehaviourTree.BlackBoard<BehaviourTreeTest.Keys>;
 
 public class BehaviourTreeTest
 {
-    // A Test behaves as an ordinary method
-    [Test]
-    public void BehaviourTreeTestSimplePasses()
+    public enum Keys
     {
-        // Use the Assert class to test conditions
+        One,
+        Two,
+        Three,
     }
 
-    // A UnityTest behaves like a coroutine in Play Mode. In Edit Mode you can use
-    // `yield return null;` to skip a frame.
-    [UnityTest]
-    public IEnumerator BehaviourTreeTestWithEnumeratorPasses()
+    [Test]
+    public void BehaviourTreeTestBlackBoard()
     {
-        // Use the Assert class to test conditions.
-        // Use yield to skip a frame.
-        yield return null;
+        var blackboard = new BlackBoard();
+        blackboard.SetFloat(Keys.One, 123.456f);
+        Assert.AreEqual(blackboard.GetFloat(Keys.One), 123.456f);
+        blackboard.SetBool(Keys.Two, true);
+        Assert.AreEqual(blackboard.GetBool(Keys.Two), true);
+        blackboard.SetInt(Keys.Three, 654321);
+        Assert.AreEqual(blackboard.GetInt(Keys.Three), 654321);
+        blackboard.SetVector3(Keys.One, new Vector3(1.0f, 2.0f, 3.0f));
+        Assert.AreEqual(blackboard.GetVector3(Keys.One), new Vector3(1.0f, 2.0f, 3.0f));
+        var obj = new GameObject("name");
+        blackboard.SetGameObject(Keys.Three, obj);
+        Assert.AreEqual(blackboard.GetGameObject(Keys.Three), obj);
     }
 }
