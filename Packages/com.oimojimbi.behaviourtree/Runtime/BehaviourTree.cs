@@ -109,8 +109,127 @@ namespace BehaviourTree
         Running,
     }
 
-    public abstract class BTNode
+    public abstract class BTGraphNode
     {
-        public abstract BTResult Execute(BlackBoard blackboard);
+        protected BTGraphNode Parent { get; private set; }
+
+        public void SetParent(BTGraphNode parent)
+        {
+            Parent = parent;
+        }
+
+        public virtual void AddChild(BTGraphNode child)
+        {
+        }
+
+        public virtual void SetResult(BTResult result)
+        {
+        }
+
+        public abstract BTGraphNode GetNextNode();
+    }
+
+    public class BTGraphNodeLeaf : BTGraphNode
+    {
+        private BTResult result = BTResult.Success;
+
+        public override void SetResult(BTResult result)
+        {
+            this.result = result;
+        }
+
+        public override BTGraphNode GetNextNode()
+        {
+            if (result == BTResult.Running)
+            {
+                return this;
+            }
+            return Parent;
+        }
+    }
+
+    public abstract class BTGraphNodeDecorator : BTGraphNode
+    {
+        protected BTGraphNode Child { get; private set; }
+
+        public override void AddChild(BTGraphNode child)
+        {
+            Child = child;
+        }
+    }
+
+    public class BTGraphNodeRepeat : BTGraphNodeDecorator
+    {
+        private int maxCount = 0;
+        private int count = 0;
+
+        public BTGraphNodeRepeat(in int maxCount)
+        {
+            this.maxCount = maxCount;
+        }
+
+        public BTGraphNodeRepeat()
+        {
+        }
+
+        public override BTGraphNode GetNextNode()
+        {
+            if (maxCount == 0)
+            {
+                return Child;
+            }
+            count++;
+            if (count >= maxCount)
+            {
+                count = 0;
+                return Parent;
+            }
+            return Child;
+        }
+    }
+
+    public abstract class BTGraphNodeComposite : BTGraphNode
+    {
+        protected BTResult Result { get; private set; }
+        private List<BTGraphNode> children = new List<BTGraphNode>();
+        private int currentChildIndex = 0;
+
+        public override void AddChild(BTGraphNode child)
+        {
+            children.Add(child);
+        }
+
+        public override void SetResult(BTResult result)
+        {
+            Result = result;
+        }
+
+        protected BTGraphNode GetNextNode(in bool seekNextChild)
+        {
+            if ((currentChildIndex == 0 || seekNextChild) && currentChildIndex < children.Count)
+            {
+                var child = children[currentChildIndex];
+                currentChildIndex++;
+                return child;
+            }
+            currentChildIndex = 0;
+            return Parent;
+        }
+    }
+
+    public class BTGraphNodeSequence : BTGraphNodeComposite
+    {
+        public override BTGraphNode GetNextNode()
+        {
+            return GetNextNode(Result == BTResult.Success);
+        }
+    }
+
+    public class BTGraphNodeSelection : BTGraphNodeComposite
+    {
+        public override BTGraphNode GetNextNode()
+        {
+            return GetNextNode(Result == BTResult.Failure);
+        }
     }
 }
