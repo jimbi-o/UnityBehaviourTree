@@ -72,6 +72,18 @@ public class BehaviourTreeTest
     }
 
     [Test]
+    public void BehaviourTreeTestTraverseSucceeder()
+    {
+        var node = new BTGraphNodeSucceeder();
+        node.SetResult(BTResult.Success);
+        Assert.AreEqual(node.GetResult(), BTResult.Success);
+        node.SetResult(BTResult.Running);
+        Assert.AreEqual(node.GetResult(), BTResult.Running);
+        node.SetResult(BTResult.Failure);
+        Assert.AreEqual(node.GetResult(), BTResult.Success);
+    }
+
+    [Test]
     public void BehaviourTreeTestTraverseSequence()
     {
         var root = new BTGraphNodeRepeat();

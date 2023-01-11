@@ -216,6 +216,18 @@ namespace BehaviourTree
         }
     }
 
+    public class BTGraphNodeSucceeder : BTGraphNodeResultDecorator
+    {
+        public override BTResult GetResult()
+        {
+            if (base.GetResult() == BTResult.Running)
+            {
+                return BTResult.Running;
+            }
+            return BTResult.Success;
+        }
+    }
+
     public abstract class BTGraphNodeComposite : BTGraphNode
     {
         protected BTResult Result { get; private set; }
