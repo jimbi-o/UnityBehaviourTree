@@ -128,7 +128,7 @@ namespace BehaviourTree
             return result;
         }
 
-        public virtual void SetResult(BTResult result)
+        public void SetResult(BTResult result)
         {
             this.result = result;
         }
@@ -185,6 +185,34 @@ namespace BehaviourTree
                 return Parent;
             }
             return Child;
+        }
+    }
+
+    public abstract class BTGraphNodeResultDecorator : BTGraphNodeDecorator
+    {
+        private bool fromParent = true;
+        public override BTGraphNode GetNextNode()
+        {
+            var retNode = fromParent ? Child : Parent;
+            fromParent = !fromParent;
+            return retNode;
+        }
+    }
+
+    public class BTGraphNodeInverter : BTGraphNodeResultDecorator
+    {
+        public override BTResult GetResult()
+        {
+            var result = base.GetResult();
+            if (result == BTResult.Success)
+            {
+                return BTResult.Failure;
+            }
+            if (result == BTResult.Failure)
+            {
+                return BTResult.Success;
+            }
+            return result;
         }
     }
 
