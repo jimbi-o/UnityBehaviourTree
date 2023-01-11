@@ -112,6 +112,7 @@ namespace BehaviourTree
     public abstract class BTGraphNode
     {
         protected BTGraphNode Parent { get; private set; }
+        private BTResult result = BTResult.Success;
 
         public void SetParent(BTGraphNode parent)
         {
@@ -122,8 +123,14 @@ namespace BehaviourTree
         {
         }
 
+        public virtual BTResult GetResult()
+        {
+            return result;
+        }
+
         public virtual void SetResult(BTResult result)
         {
+            this.result = result;
         }
 
         public abstract BTGraphNode GetNextNode();
@@ -131,16 +138,9 @@ namespace BehaviourTree
 
     public class BTGraphNodeLeaf : BTGraphNode
     {
-        private BTResult result = BTResult.Success;
-
-        public override void SetResult(BTResult result)
-        {
-            this.result = result;
-        }
-
         public override BTGraphNode GetNextNode()
         {
-            if (result == BTResult.Running)
+            if (GetResult() == BTResult.Running)
             {
                 return this;
             }
@@ -199,11 +199,6 @@ namespace BehaviourTree
             children.Add(child);
         }
 
-        public override void SetResult(BTResult result)
-        {
-            Result = result;
-        }
-
         protected BTGraphNode GetNextNode(in bool seekNextChild)
         {
             if ((currentChildIndex == 0 || seekNextChild) && currentChildIndex < children.Count)
@@ -221,7 +216,7 @@ namespace BehaviourTree
     {
         public override BTGraphNode GetNextNode()
         {
-            return GetNextNode(Result == BTResult.Success);
+            return GetNextNode(GetResult() == BTResult.Success);
         }
     }
 
@@ -229,7 +224,7 @@ namespace BehaviourTree
     {
         public override BTGraphNode GetNextNode()
         {
-            return GetNextNode(Result == BTResult.Failure);
+            return GetNextNode(GetResult() == BTResult.Failure);
         }
     }
 }
