@@ -112,7 +112,6 @@ namespace BehaviourTree
     public abstract class BTGraphNode
     {
         protected BTGraphNode Parent { get; private set; }
-        private BTResult result = BTResult.Success;
 
         public void SetParent(BTGraphNode parent)
         {
@@ -123,24 +122,19 @@ namespace BehaviourTree
         {
         }
 
-        public virtual BTResult GetResult()
+        public virtual BTResult GetResult(in BTResult prevResult)
         {
-            return result;
+            return prevResult;
         }
 
-        public void SetResult(BTResult result)
-        {
-            this.result = result;
-        }
-
-        public abstract BTGraphNode GetNextNode();
+        public abstract BTGraphNode GetNextNode(in BTResult prevResult);
     }
 
     public class BTGraphNodeLeaf : BTGraphNode
     {
-        public override BTGraphNode GetNextNode()
+        public override BTGraphNode GetNextNode(in BTResult prevResult)
         {
-            if (GetResult() == BTResult.Running)
+            if (prevResult == BTResult.Running)
             {
                 return this;
             }
@@ -172,7 +166,7 @@ namespace BehaviourTree
         {
         }
 
-        public override BTGraphNode GetNextNode()
+        public override BTGraphNode GetNextNode(in BTResult prevResult)
         {
             if (maxCount == 0)
             {
@@ -191,15 +185,14 @@ namespace BehaviourTree
     public class BTGraphNodeRepeatUntilFail : BTGraphNodeDecorator
     {
         private bool lastReturnNodeIsParent = true;
-        public override BTGraphNode GetNextNode()
+        public override BTGraphNode GetNextNode(in BTResult prevResult)
         {
-            if (lastReturnNodeIsParent || GetResult() != BTResult.Failure)
+            if (lastReturnNodeIsParent || prevResult != BTResult.Failure)
             {
                 lastReturnNodeIsParent = false;
                 return Child;
             }
             lastReturnNodeIsParent = true;
-            SetResult(BTResult.Success);
             return Parent;
         }
     }
@@ -207,7 +200,7 @@ namespace BehaviourTree
     public abstract class BTGraphNodeResultDecorator : BTGraphNodeDecorator
     {
         private bool fromParent = true;
-        public override BTGraphNode GetNextNode()
+        public override BTGraphNode GetNextNode(in BTResult prevResult)
         {
             var retNode = fromParent ? Child : Parent;
             fromParent = !fromParent;
@@ -217,9 +210,9 @@ namespace BehaviourTree
 
     public class BTGraphNodeInverter : BTGraphNodeResultDecorator
     {
-        public override BTResult GetResult()
+        public override BTResult GetResult(in BTResult prevResult)
         {
-            if (base.GetResult() == BTResult.Success)
+            if (prevResult == BTResult.Success)
             {
                 return BTResult.Failure;
             }
@@ -229,7 +222,7 @@ namespace BehaviourTree
 
     public class BTGraphNodeSucceeder : BTGraphNodeResultDecorator
     {
-        public override BTResult GetResult()
+        public override BTResult GetResult(in BTResult prevResult)
         {
             return BTResult.Success;
         }
@@ -261,17 +254,17 @@ namespace BehaviourTree
 
     public class BTGraphNodeSequence : BTGraphNodeComposite
     {
-        public override BTGraphNode GetNextNode()
+        public override BTGraphNode GetNextNode(in BTResult prevResult)
         {
-            return GetNextNode(GetResult() == BTResult.Success);
+            return GetNextNode(prevResult == BTResult.Success);
         }
     }
 
     public class BTGraphNodeSelection : BTGraphNodeComposite
     {
-        public override BTGraphNode GetNextNode()
+        public override BTGraphNode GetNextNode(in BTResult prevResult)
         {
-            return GetNextNode(GetResult() == BTResult.Failure);
+            return GetNextNode(prevResult == BTResult.Failure);
         }
     }
 }

@@ -41,12 +41,12 @@ public class BehaviourTreeTest
         parent.SetParent(root);
         parent.AddChild(child);
         child.SetParent(parent);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
     }
 
     [Test]
@@ -59,15 +59,13 @@ public class BehaviourTreeTest
         parent.SetParent(root);
         parent.AddChild(child);
         child.SetParent(parent);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), root);
     }
 
     [Test]
@@ -80,24 +78,20 @@ public class BehaviourTreeTest
         parent.SetParent(root);
         parent.AddChild(child);
         child.SetParent(parent);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        Assert.AreEqual(parent.GetNextNode(), child);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetResult(), BTResult.Failure);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetResult(), BTResult.Success);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
+        Assert.AreEqual(parent.GetResult(BTResult.Success), BTResult.Failure);
+        Assert.AreEqual(parent.GetResult(BTResult.Failure), BTResult.Success);
     }
 
     [Test]
     public void BehaviourTreeTestTraverseSucceeder()
     {
         var node = new BTGraphNodeSucceeder();
-        node.SetResult(BTResult.Success);
-        Assert.AreEqual(node.GetResult(), BTResult.Success);
-        node.SetResult(BTResult.Failure);
-        Assert.AreEqual(node.GetResult(), BTResult.Success);
+        Assert.AreEqual(node.GetResult(BTResult.Success), BTResult.Success);
+        Assert.AreEqual(node.GetResult(BTResult.Failure), BTResult.Success);
     }
 
     [Test]
@@ -117,27 +111,19 @@ public class BehaviourTreeTest
         child2.SetParent(parent);
         child3.SetParent(parent);
         // root (repeat)
-        Assert.AreEqual(root.GetNextNode(), parent);
+        Assert.AreEqual(root.GetNextNode(BTResult.Success), parent);
         // leaf
-        child1.SetResult(BTResult.Success);
-        Assert.AreEqual(child1.GetNextNode(), parent);
-        child1.SetResult(BTResult.Failure);
-        Assert.AreEqual(child1.GetNextNode(), parent);
-        child1.SetResult(BTResult.Running);
-        Assert.AreEqual(child1.GetNextNode(), child1);
+        Assert.AreEqual(child1.GetNextNode(BTResult.Success), parent);
+        Assert.AreEqual(child1.GetNextNode(BTResult.Failure), parent);
+        Assert.AreEqual(child1.GetNextNode(BTResult.Running), child1);
         // sequence
-        Assert.AreEqual(parent.GetNextNode(), child1);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetNextNode(), child2);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetNextNode(), child3);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        Assert.AreEqual(parent.GetNextNode(), child1);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetNextNode(), child2);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child1);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child2);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child3);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child1);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child2);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), root);
     }
 
     [Test]
@@ -157,20 +143,14 @@ public class BehaviourTreeTest
         child2.SetParent(parent);
         child3.SetParent(parent);
         // selection
-        Assert.AreEqual(parent.GetNextNode(), child1);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        Assert.AreEqual(parent.GetNextNode(), child1);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), child2);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), child3);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), root);
-        Assert.AreEqual(parent.GetNextNode(), child1);
-        parent.SetResult(BTResult.Failure);
-        Assert.AreEqual(parent.GetNextNode(), child2);
-        parent.SetResult(BTResult.Success);
-        Assert.AreEqual(parent.GetNextNode(), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child1);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child1);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), child2);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), child3);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), root);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), child1);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Failure), child2);
+        Assert.AreEqual(parent.GetNextNode(BTResult.Success), root);
     }
 }
