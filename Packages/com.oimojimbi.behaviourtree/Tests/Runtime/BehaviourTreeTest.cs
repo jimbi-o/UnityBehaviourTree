@@ -50,6 +50,27 @@ public class BehaviourTreeTest
     }
 
     [Test]
+    public void BehaviourTreeTestTraverseRepeatUntilFail()
+    {
+        var root = new BTGraphNodeRepeat();
+        var parent = new BTGraphNodeRepeatUntilFail();
+        var child = new BTGraphNodeLeaf();
+        root.AddChild(parent);
+        parent.SetParent(root);
+        parent.AddChild(child);
+        child.SetParent(parent);
+        Assert.AreEqual(parent.GetNextNode(), child);
+        parent.SetResult(BTResult.Failure);
+        Assert.AreEqual(parent.GetNextNode(), root);
+        Assert.AreEqual(parent.GetNextNode(), child);
+        Assert.AreEqual(parent.GetNextNode(), child);
+        Assert.AreEqual(parent.GetNextNode(), child);
+        Assert.AreEqual(parent.GetNextNode(), child);
+        parent.SetResult(BTResult.Failure);
+        Assert.AreEqual(parent.GetNextNode(), root);
+    }
+
+    [Test]
     public void BehaviourTreeTestTraverseInverter()
     {
         var root = new BTGraphNodeRepeat();
@@ -65,8 +86,6 @@ public class BehaviourTreeTest
         Assert.AreEqual(parent.GetNextNode(), root);
         parent.SetResult(BTResult.Success);
         Assert.AreEqual(parent.GetResult(), BTResult.Failure);
-        parent.SetResult(BTResult.Running);
-        Assert.AreEqual(parent.GetResult(), BTResult.Running);
         parent.SetResult(BTResult.Failure);
         Assert.AreEqual(parent.GetResult(), BTResult.Success);
     }
@@ -77,8 +96,6 @@ public class BehaviourTreeTest
         var node = new BTGraphNodeSucceeder();
         node.SetResult(BTResult.Success);
         Assert.AreEqual(node.GetResult(), BTResult.Success);
-        node.SetResult(BTResult.Running);
-        Assert.AreEqual(node.GetResult(), BTResult.Running);
         node.SetResult(BTResult.Failure);
         Assert.AreEqual(node.GetResult(), BTResult.Success);
     }
