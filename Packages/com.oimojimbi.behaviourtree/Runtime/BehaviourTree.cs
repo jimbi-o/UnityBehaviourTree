@@ -230,7 +230,6 @@ namespace BehaviourTree
 
     public abstract class BTGraphNodeComposite : BTGraphNode
     {
-        protected BTResult Result { get; private set; }
         private List<BTGraphNode> children = new List<BTGraphNode>();
         private int currentChildIndex = 0;
 
