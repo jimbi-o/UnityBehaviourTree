@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace BehaviourTree
 {
@@ -122,23 +123,37 @@ namespace BehaviourTree
         {
         }
 
-        public virtual BTResult GetResult(in BTResult prevResult)
+        public virtual void PreTick(BlackBoard blackboard)
         {
+        }
+
+        public virtual BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
+        {
+            Assert.AreNotEqual(prevResult, BTResult.Running);
             return prevResult;
         }
 
-        public abstract BTGraphNode GetNextNode(in BTResult prevResult);
+        public abstract BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard);
     }
 
     public class BTGraphNodeLeaf : BTGraphNode
     {
-        public override BTGraphNode GetNextNode(in BTResult prevResult)
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             if (prevResult == BTResult.Running)
             {
                 return this;
             }
             return Parent;
+        }
+
+        public override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
+        {
+            if (prevNode == Parent)
+            {
+                Assert.AreNotEqual(prevResult, BTResult.Running);
+            }
+            return prevResult;
         }
     }
 
@@ -155,7 +170,7 @@ namespace BehaviourTree
     public class BTGraphNodeRepeat : BTGraphNodeDecorator
     {
         private int maxCount = 0;
-        private int count = 0;
+        private int count = 0; // TODO remove
 
         public BTGraphNodeRepeat(in int maxCount)
         {
@@ -166,52 +181,50 @@ namespace BehaviourTree
         {
         }
 
-        public override BTGraphNode GetNextNode(in BTResult prevResult)
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             if (maxCount == 0)
             {
                 return Child;
             }
-            count++;
-            if (count >= maxCount)
+            if (prevNode == Parent)
             {
                 count = 0;
+            }
+            if (count >= maxCount)
+            {
                 return Parent;
             }
+            count++;
             return Child;
         }
     }
 
     public class BTGraphNodeRepeatUntilFail : BTGraphNodeDecorator
     {
-        private bool lastReturnNodeIsParent = true;
-        public override BTGraphNode GetNextNode(in BTResult prevResult)
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
-            if (lastReturnNodeIsParent || prevResult != BTResult.Failure)
+            if (prevNode == Parent || prevResult != BTResult.Failure)
             {
-                lastReturnNodeIsParent = false;
                 return Child;
             }
-            lastReturnNodeIsParent = true;
             return Parent;
         }
     }
 
     public abstract class BTGraphNodeResultDecorator : BTGraphNodeDecorator
     {
-        private bool fromParent = true;
-        public override BTGraphNode GetNextNode(in BTResult prevResult)
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
-            var retNode = fromParent ? Child : Parent;
-            fromParent = !fromParent;
-            return retNode;
+            return (prevNode == Parent) ? Child : Parent;
         }
     }
 
     public class BTGraphNodeInverter : BTGraphNodeResultDecorator
     {
-        public override BTResult GetResult(in BTResult prevResult)
+        public override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
+            Assert.AreNotEqual(prevResult, BTResult.Running);
             if (prevResult == BTResult.Success)
             {
                 return BTResult.Failure;
@@ -222,8 +235,9 @@ namespace BehaviourTree
 
     public class BTGraphNodeSucceeder : BTGraphNodeResultDecorator
     {
-        public override BTResult GetResult(in BTResult prevResult)
+        public override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
+            Assert.AreNotEqual(prevResult, BTResult.Running);
             return BTResult.Success;
         }
     }
@@ -231,39 +245,52 @@ namespace BehaviourTree
     public abstract class BTGraphNodeComposite : BTGraphNode
     {
         private List<BTGraphNode> children = new List<BTGraphNode>();
-        private int currentChildIndex = 0;
 
         public override void AddChild(BTGraphNode child)
         {
             children.Add(child);
         }
 
-        protected BTGraphNode GetNextNode(in bool seekNextChild)
+        protected BTGraphNode GetNextNode(BTGraphNode prevNode, in bool seekNextChild)
         {
-            if ((currentChildIndex == 0 || seekNextChild) && currentChildIndex < children.Count)
+            if (children.Count == 0)
             {
-                var child = children[currentChildIndex];
-                currentChildIndex++;
-                return child;
+                return Parent;
             }
-            currentChildIndex = 0;
+            if (prevNode == Parent)
+            {
+                return children[0];
+            }
+            if (!seekNextChild)
+            {
+                return Parent;
+            }
+            for (int i = 0; i < children.Count - 1; i++)
+            {
+                if (children[i] == prevNode)
+                {
+                    return children[i + 1];
+                }
+            }
             return Parent;
         }
     }
 
     public class BTGraphNodeSequence : BTGraphNodeComposite
     {
-        public override BTGraphNode GetNextNode(in BTResult prevResult)
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
-            return GetNextNode(prevResult == BTResult.Success);
+            Assert.AreNotEqual(prevResult, BTResult.Running);
+            return GetNextNode(prevNode, prevResult == BTResult.Success);
         }
     }
 
     public class BTGraphNodeSelection : BTGraphNodeComposite
     {
-        public override BTGraphNode GetNextNode(in BTResult prevResult)
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
-            return GetNextNode(prevResult == BTResult.Failure);
+            Assert.AreNotEqual(prevResult, BTResult.Running);
+            return GetNextNode(prevNode, prevResult == BTResult.Failure);
         }
     }
 }
