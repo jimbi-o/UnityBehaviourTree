@@ -73,17 +73,19 @@ public class BehaviourTreeTest
     public void BehaviourTreeTestTraverseRepeat()
     {
         var root = new BTGraphNodeRepeat();
-        var parent = new BTGraphNodeRepeat(3);
+        var parent = new BTGraphNodeRepeat(3, BTGraphNode.systemIdStart);
         var child = new BTGraphNodeLeaf();
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
         parent.AddChild(child);
         child.SetParent(parent);
+        parent.PreTick(blackboard);
         Assert.AreEqual(parent.GetNextNode(root, BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(child, BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(child, BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(child, BTResult.Success, blackboard), root);
+        parent.PreTick(blackboard);
         Assert.AreEqual(parent.GetNextNode(root, BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(child, BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(child, BTResult.Success, blackboard), child);

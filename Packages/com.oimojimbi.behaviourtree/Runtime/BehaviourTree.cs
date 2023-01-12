@@ -112,6 +112,7 @@ namespace BehaviourTree
 
     public abstract class BTGraphNode
     {
+        public const int systemIdStart = unchecked((int)0xF0000000);
         protected BTGraphNode Parent { get; private set; }
 
         public void SetParent(BTGraphNode parent)
@@ -170,15 +171,21 @@ namespace BehaviourTree
     public class BTGraphNodeRepeat : BTGraphNodeDecorator
     {
         private int maxCount = 0;
-        private int count = 0; // TODO remove
+        private int blackboardId;
 
-        public BTGraphNodeRepeat(in int maxCount)
+        public BTGraphNodeRepeat(in int maxCount, in int blackboardId)
         {
             this.maxCount = maxCount;
+            this.blackboardId = blackboardId;
         }
 
         public BTGraphNodeRepeat()
         {
+        }
+
+        public override void PreTick(BlackBoard blackboard)
+        {
+            blackboard.SetInt(blackboardId, 0);
         }
 
         public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
@@ -187,15 +194,12 @@ namespace BehaviourTree
             {
                 return Child;
             }
-            if (prevNode == Parent)
-            {
-                count = 0;
-            }
+            var count = blackboard.GetInt(blackboardId);
             if (count >= maxCount)
             {
                 return Parent;
             }
-            count++;
+            blackboard.SetInt(blackboardId, count + 1);
             return Child;
         }
     }
