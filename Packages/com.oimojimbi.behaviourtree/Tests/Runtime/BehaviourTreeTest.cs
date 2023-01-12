@@ -7,23 +7,6 @@ using BehaviourTree;
 
 public class BehaviourTreeTest
 {
-    /*
-      var node = root;
-      var result = BTResult.Success;
-      while (true)
-      {
-          result = node.Tick();
-          if (result == BTResult.Running) {
-              return;
-          }
-          node = node.GetNextNode();
-          if (node == null)
-          {
-              node = root;
-          }
-          node.PreTick();
-      }
-    */
     public enum Keys
     {
         One,
@@ -48,6 +31,14 @@ public class BehaviourTreeTest
         Assert.AreEqual(blackboard.GetGameObject((int)Keys.Three), obj);
     }
 
+    public class BTGraphNodeLeaf : BTGraphNodeTask
+    {
+        protected override BTResult TickTask(BlackBoard blackboard)
+        {
+            return BTResult.Success;
+        }
+    }
+
     [Test]
     public void BehaviourTreeTestTraverseLeaf()
     {
@@ -62,11 +53,6 @@ public class BehaviourTreeTest
         Assert.AreEqual(child.GetNextNode(child, BTResult.Success, blackboard), parent);
         Assert.AreEqual(child.GetNextNode(child, BTResult.Failure, blackboard), parent);
         Assert.AreEqual(child.GetNextNode(child, BTResult.Running, blackboard), child);
-        Assert.AreEqual(child.Tick(parent, BTResult.Success, blackboard), BTResult.Success);
-        Assert.AreEqual(child.Tick(parent, BTResult.Failure, blackboard), BTResult.Failure);
-        Assert.AreEqual(child.Tick(child, BTResult.Success, blackboard), BTResult.Success);
-        Assert.AreEqual(child.Tick(child, BTResult.Failure, blackboard), BTResult.Failure);
-        Assert.AreEqual(child.Tick(child, BTResult.Running, blackboard), BTResult.Running);
     }
 
     [Test]
@@ -211,5 +197,13 @@ public class BehaviourTreeTest
         Assert.AreEqual(parent.Tick(child2, BTResult.Success, blackboard), BTResult.Success);
         Assert.AreEqual(parent.Tick(child3, BTResult.Success, blackboard), BTResult.Success);
         Assert.AreEqual(parent.Tick(child3, BTResult.Failure, blackboard), BTResult.Failure);
+    }
+
+    [Test]
+    public void BehaviourTreeTestTraverseSystem()
+    {
+        var bt = new BehaviourTreeSystem();
+        bt.Root.AddChild(null);
+        //bt.Tick();
     }
 }
