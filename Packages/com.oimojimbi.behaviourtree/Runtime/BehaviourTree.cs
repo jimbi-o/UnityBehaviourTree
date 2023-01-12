@@ -139,7 +139,7 @@ namespace BehaviourTree
 
     public abstract class BTGraphNodeTask : BTGraphNode
     {
-        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
+        public sealed override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             if (prevResult == BTResult.Running)
             {
@@ -148,7 +148,7 @@ namespace BehaviourTree
             return Parent;
         }
 
-        public override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
+        public sealed override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             if (prevNode == Parent)
             {
@@ -158,6 +158,10 @@ namespace BehaviourTree
         }
 
         protected abstract BTResult TickTask(BlackBoard blackboard);
+
+        public sealed override void AddChild(BTGraphNode child)
+        {
+        }
     }
 
     public abstract class BTGraphNodeDecorator : BTGraphNode
