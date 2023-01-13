@@ -31,19 +31,30 @@ public class BehaviourTreeTest
         Assert.AreEqual(blackboard.GetGameObject((int)Keys.Three), obj);
     }
 
-    public class BTGraphNodeLeaf : BTGraphNodeTask
+    private static BTResult TickTaskSuccess(BlackBoard blackboard)
     {
-        protected override BTResult TickTask(BlackBoard blackboard)
-        {
-            return BTResult.Success;
-        }
+        return BTResult.Success;
     }
+
+    private static BTResult TickTaskFailure(BlackBoard blackboard)
+    {
+        return BTResult.Failure;
+    }
+
+    private static BTResult TickTaskRunning(BlackBoard blackboard)
+    {
+        return BTResult.Running;
+    }
+
+    private BTGraphNode successTask = new BTGraphNodeTask(TickTaskSuccess);
+    private BTGraphNode failureTask = new BTGraphNodeTask(TickTaskFailure);
+    private BTGraphNode runningTask = new BTGraphNodeTask(TickTaskRunning);
 
     [Test]
     public void BehaviourTreeTestTraverseLeaf()
     {
         var parent = new BTGraphNodeRepeat();
-        var child = new BTGraphNodeLeaf();
+        var child = successTask;
         var blackboard = new BlackBoard();
         parent.AddChild(child);
         child.SetParent(parent);
@@ -60,7 +71,7 @@ public class BehaviourTreeTest
     {
         var root = new BTGraphNodeRepeat();
         var parent = new BTGraphNodeRepeat(3, BTGraphNode.systemIdStart);
-        var child = new BTGraphNodeLeaf();
+        var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
@@ -83,7 +94,7 @@ public class BehaviourTreeTest
     {
         var root = new BTGraphNodeRepeat();
         var parent = new BTGraphNodeRepeatUntilFail();
-        var child = new BTGraphNodeLeaf();
+        var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
@@ -104,7 +115,7 @@ public class BehaviourTreeTest
     {
         var root = new BTGraphNodeRepeat();
         var parent = new BTGraphNodeInverter();
-        var child = new BTGraphNodeLeaf();
+        var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
@@ -123,7 +134,7 @@ public class BehaviourTreeTest
     {
         var root = new BTGraphNodeRepeat();
         var parent = new BTGraphNodeSucceeder();
-        var child = new BTGraphNodeLeaf();
+        var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
@@ -140,9 +151,9 @@ public class BehaviourTreeTest
     {
         var root = new BTGraphNodeRepeat();
         var parent = new BTGraphNodeSequence();
-        var child1 = new BTGraphNodeLeaf();
-        var child2 = new BTGraphNodeLeaf();
-        var child3 = new BTGraphNodeLeaf();
+        var child1 = successTask;
+        var child2 = failureTask;
+        var child3 = runningTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
@@ -173,9 +184,9 @@ public class BehaviourTreeTest
     {
         var root = new BTGraphNodeRepeat();
         var parent = new BTGraphNodeSelection();
-        var child1 = new BTGraphNodeLeaf();
-        var child2 = new BTGraphNodeLeaf();
-        var child3 = new BTGraphNodeLeaf();
+        var child1 = successTask;
+        var child2 = failureTask;
+        var child3 = runningTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
         parent.SetParent(root);
@@ -202,8 +213,30 @@ public class BehaviourTreeTest
     [Test]
     public void BehaviourTreeTestTraverseSystem()
     {
+        /*
         var bt = new BehaviourTreeSystem();
-        bt.Root.AddChild(null);
-        //bt.Tick();
+        var sequence = new BTGraphNodeSequence();
+        var selection = new BTGraphNodeSelection();
+        var repeat1 = new BTGraphNodeRepeat(2, BTGraphNode.systemIdStart);
+        var repeat2 = new BTGraphNodeRepeat(3, BTGraphNode.systemIdStart + 1);
+        var inverter = new BTGraphNodeInverter();
+        var leaf1 = new BTGraphNodeBBValueLeaf(BTResult.Success, 2, 0);
+        var leaf2 = new BTGraphNodeBBValueLeaf(BTResult.Failure, 0, 1);
+        var leaf3 = new BTGraphNodeBBValueLeaf(BTResult.Success, 2, 2);
+        // root
+        bt.Root.AddChild(sequence);
+        // sequence
+        sequence.AddChild(selection);
+        sequence.AddChild(repeat1);
+        sequence.AddChild(leaf1);
+        // sequence[0]
+        selection.AddChild(inverter);
+        inverter.AddChild(repeat2);
+        // sequence[1]
+        repeat1.AddChild(leaf2);
+        // check
+        Assert.AreEqual(bt.Node == bt.Root);
+        bt.Tick();
+        */
     }
 }

@@ -26,6 +26,23 @@ namespace BehaviourTree
         private Dictionary<int, Vector3>    vector3Map = new Dictionary<int, Vector3>();
         private Dictionary<int, GameObject> gameObjectMap = new Dictionary<int, GameObject>();
 
+        public bool HasKey(int key)
+        {
+            if (valueMap.ContainsKey(key))
+            {
+                return true;
+            }
+            if (vector3Map.ContainsKey(key))
+            {
+                return true;
+            }
+            if (gameObjectMap.ContainsKey(key))
+            {
+                return true;
+            }
+            return false;
+        }
+
         public void SetFloat(int key, in float value)
         {
             var data = new ValueUnion();
@@ -137,9 +154,16 @@ namespace BehaviourTree
         public abstract BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard);
     }
 
-    public abstract class BTGraphNodeTask : BTGraphNode
+    public sealed class BTGraphNodeTask : BTGraphNode
     {
-        public sealed override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
+        public delegate BTResult TaskTick(BlackBoard blackboard);
+        private TaskTick tickTask;
+        public BTGraphNodeTask(TaskTick tickTask)
+        {
+            this.tickTask = tickTask;
+        }
+
+        public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             if (prevResult == BTResult.Running)
             {
@@ -148,19 +172,13 @@ namespace BehaviourTree
             return Parent;
         }
 
-        public sealed override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
+        public override BTResult Tick(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             if (prevNode == Parent)
             {
                 Assert.AreNotEqual(prevResult, BTResult.Running);
             }
-            return TickTask(blackboard);
-        }
-
-        protected abstract BTResult TickTask(BlackBoard blackboard);
-
-        public sealed override void AddChild(BTGraphNode child)
-        {
+            return tickTask(blackboard);
         }
     }
 
@@ -308,29 +326,29 @@ namespace BehaviourTree
     {
         public BTGraphNode Root { get; private set; } = new BTGraphNodeRepeat();
         public BlackBoard Blackboard { get; private set; } = new BlackBoard();
-        private BTGraphNode node;
+        public BTGraphNode Node { get; private set; }
         private BTResult result = BTResult.Success;
 
         public BehaviourTreeSystem()
         {
-            node = Root;
-            node.PreTick(Blackboard);
+            Node = Root;
+            Node.PreTick(Blackboard);
         }
 
         public void Tick()
         {
             while (true)
             {
-                result = node.Tick(node, result, Blackboard);
+                result = Node.Tick(Node, result, Blackboard);
                 if (result == BTResult.Running) {
                     return;
                 }
-                node = node.GetNextNode(node, result, Blackboard);
-                if (node == null)
+                Node = Node.GetNextNode(Node, result, Blackboard);
+                if (Node == null)
                 {
-                    node = Root;
+                    Node = Root;
                 }
-                node.PreTick(Blackboard);
+                Node.PreTick(Blackboard);
             }
         }
     }
