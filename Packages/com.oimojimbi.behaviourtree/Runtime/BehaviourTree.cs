@@ -26,7 +26,7 @@ namespace BehaviourTree
         private Dictionary<int, Vector3>    vector3Map = new Dictionary<int, Vector3>();
         private Dictionary<int, GameObject> gameObjectMap = new Dictionary<int, GameObject>();
 
-        public bool HasKey(int key)
+        public bool ContainsKey(int key)
         {
             if (valueMap.ContainsKey(key))
             {
@@ -129,8 +129,16 @@ namespace BehaviourTree
 
     public abstract class BTGraphNode
     {
-        public const int systemIdStart = unchecked((int)0xF0000000);
+        public int NodeId { get; private set; }
         protected BTGraphNode Parent { get; private set; }
+        private static int sequenceNumber = unchecked((int)0xF0000000);
+
+        public BTGraphNode()
+        {
+            Assert.IsTrue(sequenceNumber < 0);
+            NodeId = sequenceNumber;
+            sequenceNumber++;
+        }
 
         public void SetParent(BTGraphNode parent)
         {
@@ -195,12 +203,10 @@ namespace BehaviourTree
     public class BTGraphNodeRepeat : BTGraphNodeDecorator
     {
         private int maxCount = 0;
-        private int blackboardId;
 
-        public BTGraphNodeRepeat(in int maxCount, in int blackboardId)
+        public BTGraphNodeRepeat(in int maxCount)
         {
             this.maxCount = maxCount;
-            this.blackboardId = blackboardId;
         }
 
         public BTGraphNodeRepeat()
@@ -209,7 +215,7 @@ namespace BehaviourTree
 
         public override void PreTick(BlackBoard blackboard)
         {
-            blackboard.SetInt(blackboardId, 0);
+            blackboard.SetInt(NodeId, 0);
         }
 
         public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
@@ -218,12 +224,12 @@ namespace BehaviourTree
             {
                 return Child;
             }
-            var count = blackboard.GetInt(blackboardId);
+            var count = blackboard.GetInt(NodeId);
             if (count >= maxCount)
             {
                 return Parent;
             }
-            blackboard.SetInt(blackboardId, count + 1);
+            blackboard.SetInt(NodeId, count + 1);
             return Child;
         }
     }
@@ -279,28 +285,20 @@ namespace BehaviourTree
             children.Add(child);
         }
 
-        protected BTGraphNode GetNextNode(BTGraphNode prevNode, in bool seekNextChild)
+        public override void PreTick(BlackBoard blackboard)
         {
-            if (children.Count == 0)
+            blackboard.SetInt(NodeId, 0);
+        }
+
+        protected BTGraphNode GetNextNode(BlackBoard blackboard, in bool seekNextChild)
+        {
+            var index = blackboard.GetInt(NodeId);
+            if (index >= children.Count || (index > 0 && !seekNextChild))
             {
                 return Parent;
             }
-            if (prevNode == Parent)
-            {
-                return children[0];
-            }
-            if (!seekNextChild)
-            {
-                return Parent;
-            }
-            for (int i = 0; i < children.Count - 1; i++)
-            {
-                if (children[i] == prevNode)
-                {
-                    return children[i + 1];
-                }
-            }
-            return Parent;
+            blackboard.SetInt(NodeId, index + 1);
+            return children[index];
         }
     }
 
@@ -309,7 +307,7 @@ namespace BehaviourTree
         public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             Assert.AreNotEqual(prevResult, BTResult.Running);
-            return GetNextNode(prevNode, prevResult == BTResult.Success);
+            return GetNextNode(blackboard, prevResult == BTResult.Success);
         }
     }
 
@@ -318,7 +316,7 @@ namespace BehaviourTree
         public override BTGraphNode GetNextNode(BTGraphNode prevNode, in BTResult prevResult, BlackBoard blackboard)
         {
             Assert.AreNotEqual(prevResult, BTResult.Running);
-            return GetNextNode(prevNode, prevResult == BTResult.Failure);
+            return GetNextNode(blackboard, prevResult == BTResult.Failure);
         }
     }
 
@@ -343,7 +341,7 @@ namespace BehaviourTree
                 if (result == BTResult.Running) {
                     return;
                 }
-                Node = Node.GetNextNode(Node, result, Blackboard);
+                var nextNode = Node.GetNextNode(Node, result, Blackboard);
                 if (Node == null)
                 {
                     Node = Root;
