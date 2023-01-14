@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Newtonsoft.Json;
 
 namespace BehaviourTree
 {
@@ -25,6 +26,8 @@ namespace BehaviourTree
         private Dictionary<int, ValueUnion> valueMap = new Dictionary<int, ValueUnion>();
         private Dictionary<int, Vector3>    vector3Map = new Dictionary<int, Vector3>();
         private Dictionary<int, GameObject> gameObjectMap = new Dictionary<int, GameObject>();
+        private Dictionary<int, Component>  componentMap = new Dictionary<int, Component>();
+        private Dictionary<int, Transform>  transformMap = new Dictionary<int, Transform>();
 
         public bool ContainsKey(int key)
         {
@@ -37,6 +40,14 @@ namespace BehaviourTree
                 return true;
             }
             if (gameObjectMap.ContainsKey(key))
+            {
+                return true;
+            }
+            if (componentMap.ContainsKey(key))
+            {
+                return true;
+            }
+            if (transformMap.ContainsKey(key))
             {
                 return true;
             }
@@ -118,6 +129,34 @@ namespace BehaviourTree
             }
             return gameObjectMap[key];
         }
+
+        public void SetComponent(int key, in Component value)
+        {
+            componentMap[key] = value;
+        }
+
+        public Component GetComponent(in int key)
+        {
+            if (!componentMap.ContainsKey(key))
+            {
+                return null;
+            }
+            return componentMap[key];
+        }
+
+        public void SetTransform(int key, in Transform value)
+        {
+            transformMap[key] = value;
+        }
+
+        public Transform GetTransform(in int key)
+        {
+            if (!transformMap.ContainsKey(key))
+            {
+                return null;
+            }
+            return transformMap[key];
+        }
     }
 
     public enum BTResult
@@ -166,10 +205,11 @@ namespace BehaviourTree
     public sealed class BTGraphNodeTask : BTGraphNode
     {
         public delegate BTResult TaskTick(BlackBoard blackboard);
-        private TaskTick preTick;
+        public delegate void TaskPreTick(BlackBoard blackboard);
+        private TaskPreTick preTick;
         private TaskTick tickTask;
 
-        public BTGraphNodeTask(TaskTick preTick, TaskTick tickTask)
+        public BTGraphNodeTask(TaskPreTick preTick, TaskTick tickTask)
         {
             this.preTick = preTick;
             this.tickTask = tickTask;
@@ -381,7 +421,6 @@ namespace BehaviourTree
 
         public bool TickOnce()
         {
-            Debug.Log(Node.GetType().Name);
             result = Node.Tick(result, Blackboard);
             if (result == BTResult.Running) {
                 return false;
@@ -395,5 +434,76 @@ namespace BehaviourTree
             return true;
         }
 
+    }
+
+    public class BehaviourTreeImportNode
+    {
+        public string type;
+        public string task;
+        public int num;
+        public BehaviourTreeImportNode child;
+        public List<BehaviourTreeImportNode> children;
+    }
+
+    public class BehaviourTreeImportRoot
+    {
+        public BehaviourTreeImportNode root;
+    }
+
+    public class BehaviourTreeImporter
+    {
+        public static BTGraphNode ImportFromJson(string json, Dictionary<string, BTGraphNodeTask.TaskPreTick> preticks, Dictionary<string, BTGraphNodeTask.TaskTick> ticks)
+        {
+            var btImported = JsonConvert.DeserializeObject<BehaviourTreeImportRoot>(json);
+            var root = new BTGraphNodeRepeat();
+            AddChild(btImported.root, preticks, ticks, root);
+            return root;
+        }
+
+        private static void AddChild(BehaviourTreeImportNode importedNode, Dictionary<string, BTGraphNodeTask.TaskPreTick> preticks, Dictionary<string, BTGraphNodeTask.TaskTick> ticks, BTGraphNode parent)
+        {
+            if (importedNode == null)
+            {
+                return;
+            }
+            var node = CreateNode(importedNode, preticks, ticks);
+            parent.AddChild(node);
+            if (importedNode.child != null)
+            {
+                Assert.AreEqual(importedNode.children, null);
+                AddChild(importedNode.child, preticks, ticks, node);
+            }
+            if (importedNode.children != null)
+            {
+                Assert.AreEqual(importedNode.child, null);
+                foreach (var child in importedNode.children)
+                {
+                    AddChild(child, preticks, ticks, node);
+                }
+            }
+        }
+
+        private static BTGraphNode CreateNode(BehaviourTreeImportNode importedNode, Dictionary<string, BTGraphNodeTask.TaskPreTick> preticks, Dictionary<string, BTGraphNodeTask.TaskTick> ticks)
+        {
+            switch (importedNode.type)
+            {
+                case "task":
+                    return new BTGraphNodeTask(preticks[importedNode.task], ticks[importedNode.task]);
+                case "repeat":
+                    return new BTGraphNodeRepeat(importedNode.num);
+                case "repeat_until_fail":
+                    return new BTGraphNodeRepeatUntilFail();
+                case "inverter":
+                    return new BTGraphNodeInverter();
+                case "succeeder":
+                    return new BTGraphNodeSucceeder();
+                case "sequence":
+                    return new BTGraphNodeSequence();
+                case "selection":
+                    return new BTGraphNodeSelection();
+            }
+            Assert.IsTrue(false);
+            return null;
+        }
     }
 }

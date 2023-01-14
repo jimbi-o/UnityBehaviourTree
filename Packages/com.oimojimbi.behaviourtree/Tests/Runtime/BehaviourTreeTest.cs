@@ -235,7 +235,7 @@ public class BehaviourTreeTest
     }
 
     [Test]
-    public void BehaviourTreeTestTraverseSystem()
+    public void BehaviourTreeTestTraverseSet()
     {
         var root = new BTGraphNodeRepeat();
         var sequence = new BTGraphNodeSequence();
@@ -312,5 +312,20 @@ public class BehaviourTreeTest
             Assert.AreEqual(bt.Node, runningTask);
             bt.Reset();
         }
+    }
+
+    [Test]
+    public void BehaviourTreeTestJson()
+    {
+        string json = "{\"root\":{\"type\":\"sequence\",\"children\":[{\"type\":\"repeat\",\"child\":{\"type\":\"task\",\"task\":\"success\"}},{\"type\":\"selection\",\"children\":[{\"type\":\"inverter\",\"child\":{\"type\":\"repeat\",\"num\":3,\"child\":{\"type\":\"task\",\"task\":\"success\"}}},{\"type\":\"task\",\"task\":\"running\"},{\"type\":\"repeat\",\"num\":3,\"child\":{\"type\":\"task\",\"task\":\"failure\"}}]}]}}";
+        var preticks = new Dictionary<string, BTGraphNodeTask.TaskPreTick>();
+        preticks.Add("success", null);
+        preticks.Add("failure", null);
+        preticks.Add("running", null);
+        var ticks = new Dictionary<string, BTGraphNodeTask.TaskTick>();
+        ticks.Add("success", TickTaskSuccess);
+        ticks.Add("failure", TickTaskFailure);
+        ticks.Add("running", TickTaskRunning);
+        var rootNode = BehaviourTreeImporter.ImportFromJson(json, preticks, ticks);
     }
 }

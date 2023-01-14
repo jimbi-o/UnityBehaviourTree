@@ -1,0 +1,15 @@
+{
+    "root": {
+        "type": "sequence",
+        "children": [
+            {
+                "type": "task",
+                "task": "idle"
+            },
+            {
+                "type": "task",
+                "task": "move"
+            }
+        ]
+    }
+}
