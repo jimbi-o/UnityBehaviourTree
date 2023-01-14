@@ -68,9 +68,9 @@ public class BehaviourTreeTest
         return BTResult.Running;
     }
 
-    private BTGraphNode successTask = new BTGraphNodeTask(TickTaskSuccess);
-    private BTGraphNode failureTask = new BTGraphNodeTask(TickTaskFailure);
-    private BTGraphNode runningTask = new BTGraphNodeTask(TickTaskRunning);
+    private BTGraphNode successTask = new BTGraphNodeTask(null, TickTaskSuccess);
+    private BTGraphNode failureTask = new BTGraphNodeTask(null, TickTaskFailure);
+    private BTGraphNode runningTask = new BTGraphNodeTask(null, TickTaskRunning);
 
     [Test]
     public void BehaviourTreeTestTraverseLeaf()
@@ -79,7 +79,6 @@ public class BehaviourTreeTest
         var child = successTask;
         var blackboard = new BlackBoard();
         parent.AddChild(child);
-        child.SetParent(parent);
         Assert.AreEqual(child.GetNextNode(BTResult.Success, blackboard), parent);
         Assert.AreEqual(child.GetNextNode(BTResult.Failure, blackboard), parent);
         Assert.AreEqual(child.GetNextNode(BTResult.Running, blackboard), child);
@@ -96,9 +95,7 @@ public class BehaviourTreeTest
         var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
-        parent.SetParent(root);
         parent.AddChild(child);
-        child.SetParent(parent);
         parent.PreTick(blackboard);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), child);
@@ -119,9 +116,7 @@ public class BehaviourTreeTest
         var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
-        parent.SetParent(root);
         parent.AddChild(child);
-        child.SetParent(parent);
         parent.PreTick(blackboard);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(BTResult.Failure, blackboard), root);
@@ -143,9 +138,7 @@ public class BehaviourTreeTest
         var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
-        parent.SetParent(root);
         parent.AddChild(child);
-        child.SetParent(parent);
         parent.PreTick(blackboard);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), root);
@@ -164,9 +157,7 @@ public class BehaviourTreeTest
         var child = successTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
-        parent.SetParent(root);
         parent.AddChild(child);
-        child.SetParent(parent);
         parent.PreTick(blackboard);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), child);
         Assert.AreEqual(parent.GetNextNode(BTResult.Success, blackboard), root);
@@ -184,13 +175,9 @@ public class BehaviourTreeTest
         var child3 = runningTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
-        parent.SetParent(root);
         parent.AddChild(child1);
         parent.AddChild(child2);
         parent.AddChild(child3);
-        child1.SetParent(parent);
-        child2.SetParent(parent);
-        child3.SetParent(parent);
         Assert.AreEqual(parent.Tick(BTResult.Success, blackboard), BTResult.Success);
         Assert.AreEqual(parent.Tick(BTResult.Failure, blackboard), BTResult.Failure);
         Assert.AreEqual(parent.Tick(BTResult.Success, blackboard), BTResult.Success);
@@ -226,13 +213,9 @@ public class BehaviourTreeTest
         var child3 = runningTask;
         var blackboard = new BlackBoard();
         root.AddChild(parent);
-        parent.SetParent(root);
         parent.AddChild(child1);
         parent.AddChild(child2);
         parent.AddChild(child3);
-        child1.SetParent(parent);
-        child2.SetParent(parent);
-        child3.SetParent(parent);
         Assert.AreEqual(parent.Tick(BTResult.Success, blackboard), BTResult.Success);
         Assert.AreEqual(parent.Tick(BTResult.Success, blackboard), BTResult.Success);
         Assert.AreEqual(parent.Tick(BTResult.Success, blackboard), BTResult.Success);
@@ -254,30 +237,80 @@ public class BehaviourTreeTest
     [Test]
     public void BehaviourTreeTestTraverseSystem()
     {
-        /*
-        var bt = new BehaviourTreeSystem();
+        var root = new BTGraphNodeRepeat();
         var sequence = new BTGraphNodeSequence();
         var selection = new BTGraphNodeSelection();
         var repeat1 = new BTGraphNodeRepeat(2);
         var repeat2 = new BTGraphNodeRepeat(3);
+        var repeat3 = new BTGraphNodeRepeatUntilFail();
         var inverter = new BTGraphNodeInverter();
-        var leaf1 = new BTGraphNodeBBValueLeaf(BTResult.Success, 2, 0);
-        var leaf2 = new BTGraphNodeBBValueLeaf(BTResult.Failure, 0, 1);
-        var leaf3 = new BTGraphNodeBBValueLeaf(BTResult.Success, 2, 2);
+        var successTask1 = new BTGraphNodeTask(null, TickTaskSuccess);
+        var successTask2 = new BTGraphNodeTask(null, TickTaskSuccess);
+        var successTask3 = new BTGraphNodeTask(null, TickTaskSuccess);
+        var runningTask1 = new BTGraphNodeTask(null, TickTaskRunning);
         // root
-        bt.Root.AddChild(sequence);
+        root.AddChild(sequence);
         // sequence
-        sequence.AddChild(selection);
         sequence.AddChild(repeat1);
-        sequence.AddChild(leaf1);
+        sequence.AddChild(selection);
+        sequence.AddChild(successTask1);
         // sequence[0]
+        repeat1.AddChild(successTask2);
+        // sequence[1] -> selection
         selection.AddChild(inverter);
+        selection.AddChild(runningTask);
+        selection.AddChild(repeat3);
+        // selection[0]
         inverter.AddChild(repeat2);
-        // sequence[1]
-        repeat1.AddChild(leaf2);
+        repeat2.AddChild(successTask3);
         // check
-        Assert.AreEqual(bt.Node == bt.Root);
-        bt.Tick();
-        */
+        var bt = new BehaviourTreeSet(root);
+        for (int i = 0; i < 10; i++)
+        {
+            Assert.AreEqual(bt.Node, root);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, sequence);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat1);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, successTask2);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat1);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, successTask2);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat1);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, sequence);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, selection);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, inverter);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat2);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, successTask3);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat2);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, successTask3);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat2);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, successTask3);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, repeat2);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, inverter);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, selection);
+            Assert.IsTrue(bt.TickOnce());
+            Assert.AreEqual(bt.Node, runningTask);
+            Assert.IsTrue(!bt.TickOnce());
+            Assert.AreEqual(bt.Node, runningTask);
+            Assert.IsTrue(!bt.TickOnce());
+            Assert.AreEqual(bt.Node, runningTask);
+            bt.Reset();
+        }
     }
 }

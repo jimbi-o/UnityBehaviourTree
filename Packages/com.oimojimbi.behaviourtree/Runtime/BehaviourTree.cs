@@ -130,7 +130,7 @@ namespace BehaviourTree
     public abstract class BTGraphNode
     {
         public int NodeId { get; private set; }
-        protected BTGraphNode Parent { get; private set; }
+        public BTGraphNode Parent { get; private set; }
         private static int sequenceNumber = unchecked((int)0xF0000000);
 
         public BTGraphNode()
@@ -140,12 +140,13 @@ namespace BehaviourTree
             sequenceNumber++;
         }
 
-        public void SetParent(BTGraphNode parent)
+        public void AddChild(BTGraphNode child)
         {
-            Parent = parent;
+            child.Parent = this;
+            AddChildImpl(child);
         }
 
-        public virtual void AddChild(BTGraphNode child)
+        public virtual void AddChildImpl(BTGraphNode child)
         {
         }
 
@@ -165,9 +166,12 @@ namespace BehaviourTree
     public sealed class BTGraphNodeTask : BTGraphNode
     {
         public delegate BTResult TaskTick(BlackBoard blackboard);
+        private TaskTick preTick;
         private TaskTick tickTask;
-        public BTGraphNodeTask(TaskTick tickTask)
+
+        public BTGraphNodeTask(TaskTick preTick, TaskTick tickTask)
         {
+            this.preTick = preTick;
             this.tickTask = tickTask;
         }
 
@@ -180,6 +184,14 @@ namespace BehaviourTree
             return Parent;
         }
 
+        public override void PreTick(BlackBoard blackboard)
+        {
+            if (preTick != null)
+            {
+                preTick(blackboard);
+            }
+        }
+
         public override BTResult Tick(in BTResult prevResult, BlackBoard blackboard)
         {
             return tickTask(blackboard);
@@ -190,7 +202,7 @@ namespace BehaviourTree
     {
         protected BTGraphNode Child { get; private set; }
 
-        public override void AddChild(BTGraphNode child)
+        public override void AddChildImpl(BTGraphNode child)
         {
             Child = child;
         }
@@ -295,7 +307,7 @@ namespace BehaviourTree
     {
         private List<BTGraphNode> children = new List<BTGraphNode>();
 
-        public override void AddChild(BTGraphNode child)
+        public override void AddChildImpl(BTGraphNode child)
         {
             children.Add(child);
         }
@@ -335,34 +347,53 @@ namespace BehaviourTree
         }
     }
 
-    public class BehaviourTreeSystem
+    public class BehaviourTreeSet
     {
-        public BTGraphNode Root { get; private set; } = new BTGraphNodeRepeat();
-        public BlackBoard Blackboard { get; private set; } = new BlackBoard();
+        public BlackBoard Blackboard { get; private set; }
         public BTGraphNode Node { get; private set; }
+        private BTGraphNode root;
         private BTResult result = BTResult.Success;
 
-        public BehaviourTreeSystem()
+        public BehaviourTreeSet(BTGraphNode root)
         {
-            Node = Root;
+            this.root = root;
+            Reset();
+        }
+
+        public void Reset()
+        {
+            Node = root;
+            Blackboard = new BlackBoard();
             Node.PreTick(Blackboard);
+            result = BTResult.Success;
         }
 
         public void Tick()
         {
             while (true)
             {
-                result = Node.Tick(result, Blackboard);
-                if (result == BTResult.Running) {
-                    return;
-                }
-                var nextNode = Node.GetNextNode(result, Blackboard);
-                if (Node == null)
+                if (!TickOnce())
                 {
-                    Node = Root;
+                    break;
                 }
-                Node.PreTick(Blackboard);
             }
         }
+
+        public bool TickOnce()
+        {
+            Debug.Log(Node.GetType().Name);
+            result = Node.Tick(result, Blackboard);
+            if (result == BTResult.Running) {
+                return false;
+            }
+            var nextNode = Node.GetNextNode(result, Blackboard);
+            if (Node.Parent != nextNode)
+            {
+                nextNode.PreTick(Blackboard);
+            }
+            Node = nextNode;
+            return true;
+        }
+
     }
 }
