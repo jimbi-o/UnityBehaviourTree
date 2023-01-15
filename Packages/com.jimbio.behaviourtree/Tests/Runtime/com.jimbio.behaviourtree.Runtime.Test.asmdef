@@ -1,0 +1,9 @@
+{
+    "name": "com.jimbio.behaviourtree.Runtime.Tests",
+    "references": [
+        "com.jimbio.behaviourtree.Runtime"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}

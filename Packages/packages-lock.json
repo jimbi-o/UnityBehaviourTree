@@ -1,7 +1,7 @@
 {
   "dependencies": {
-    "com.oimojimbi.behaviourtree": {
-      "version": "file:com.oimojimbi.behaviourtree",
+    "com.jimbio.behaviourtree": {
+      "version": "file:com.jimbio.behaviourtree",
       "depth": 0,
       "source": "embedded",
       "dependencies": {}

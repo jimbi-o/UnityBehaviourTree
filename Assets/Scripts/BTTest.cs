@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using BehaviourTree;
+using ScriptBehaviourTree;
 
 public class BTTest : MonoBehaviour
 {

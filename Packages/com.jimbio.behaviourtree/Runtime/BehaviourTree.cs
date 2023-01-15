@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.Assertions;
 using Newtonsoft.Json;
 
-namespace BehaviourTree
+namespace ScriptBehaviourTree
 {
 
     [StructLayout(LayoutKind.Explicit)]
