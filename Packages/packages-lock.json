@@ -1,10 +1,11 @@
 {
   "dependencies": {
     "com.jimbio.behaviourtree": {
-      "version": "file:com.jimbio.behaviourtree",
+      "version": "https://github.com/jimbi-o/UnityScriptBehaviourTree.git",
       "depth": 0,
-      "source": "embedded",
-      "dependencies": {}
+      "source": "git",
+      "dependencies": {},
+      "hash": "2e537a1bc10411cb7b8013a1483c4484809e5e88"
     },
     "com.unity.burst": {
       "version": "1.7.3",
